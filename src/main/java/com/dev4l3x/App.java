@@ -31,13 +31,7 @@ public class App {
                 for (SelectionKey key : selectedKeys) {
 
                     if (key.isAcceptable()) {
-                        SocketChannel socketChannel = serverSocketChannel.accept();
-                        if (socketChannel == null) {
-                            continue;
-                        }
-                        socketChannel.configureBlocking(false);
-                        socketChannel.register(selector, SelectionKey.OP_READ);
-                        continue;
+                        registerIncomingConnection(key, selector, serverSocketChannel);
                     }
 
                     if (!key.isReadable()) {
@@ -62,5 +56,17 @@ public class App {
         } catch (IOException exception) {
             System.err.println("An error has ocurred while creating socket");
         }
+    }
+
+    private static void registerIncomingConnection(SelectionKey key, Selector selector,
+            ServerSocketChannel serverSocketChannel) {
+        SocketChannel socketChannel = serverSocketChannel.accept();
+
+        if (socketChannel == null) {
+            return;
+        }
+
+        socketChannel.configureBlocking(false);
+        socketChannel.register(selector, SelectionKey.OP_READ);
     }
 }
