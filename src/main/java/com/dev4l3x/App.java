@@ -40,6 +40,7 @@ public class App {
                         incomingRequests.execute(() -> registerIncomingConnection(key, selector, serverSocketChannel));
                     } else if (key.isValid() && key.isReadable()) {
                         responses.execute(() -> sendResponse(key));
+                        key.cancel();
                     }
                 }
 
@@ -54,7 +55,15 @@ public class App {
 
     private static void sendResponse(SelectionKey key) {
 
-        try (SocketChannel client = (SocketChannel) key.channel()) {
+        try {
+            SocketChannel client = (SocketChannel) key.channel();
+
+            ByteBuffer buffer = ByteBuffer.allocate(256);
+
+            if (client.read(buffer) == -1) {
+                buffer.clear();
+                client.close();
+            }
 
             String message = "Hello World!";
             String response = String.format(
@@ -64,6 +73,7 @@ public class App {
             System.out.println("⏳ Sending response to client...");
 
             client.write(ByteBuffer.wrap(response.getBytes()));
+            client.close();
         } catch (IOException exception) {
             System.err.println("An error has ocurred while sending response: ");
             System.err.println(exception.toString());
